@@ -7,49 +7,65 @@ e2prom可以实现掉电不掉数据
 和PCF8591类似，都是基于I2C协议
 
 ```c
-/*发送数据函数*/
-void WriteData(unsigned char address,unsigned char dat)
+//写入eeprom
+void W_eeprom(unsigned char dat, unsigned char address)
 {
-		I2C_Start();
-		I2C_SendByte(0xA0); //发送器件地址(写模式)
-		I2C_ReceiveAck(); //等待应答
-		I2C_SendByte(address); //发送eeporm存储地址
-		I2C_ReceiveAck();
-    
-		I2C_SendByte(dat); //发送数据
-		I2C_ReceiveAck();
-		I2C_Stop();
+	I2CStart();
+	I2CSendByte(0xA0); //解除写保护
+	I2CWaitAck();
+	I2CSendByte(address);
+	I2CWaitAck();
+	I2CSendByte(dat);
+	I2CWaitAck();
+	I2CStop();
+    //共计六个延时和Delay_ms效果相同，但是Delay_ms需要重新定义函数很麻烦
+	I2C_Delay(255);
+	I2C_Delay(255);
+	I2C_Delay(255);
+	I2C_Delay(255);
+	I2C_Delay(255);
+	I2C_Delay(255);
+    // Delay_ms(5);
 }
-
-
- 
-/*读取数据函数*/
-unsigned char ReadData(unsigned char address)
+//读出eeprom
+unsigned char R_eeprom(unsigned char address)
 {
-		unsigned char mid = 0;
-		I2C_Start();
-		I2C_SendByte(0xA0);
-		I2C_ReceiveAck();
-		I2C_SendByte(address);
-		I2C_ReceiveAck();
-	
-		I2C_Start();
-		I2C_SendByte(0xA1); //发送器件地址(读模式)
-		I2C_ReceiveAck();
-	
-		mid = I2C_RecieveByte();
-		I2C_SendAck(1);
-		I2C_Stop();
-	
-		return mid;
+	unsigned char temp;
+	I2CStart();
+	I2CSendByte(0xa0);
+	I2CWaitAck();
+	I2CSendByte(address);
+	I2CWaitAck();
+	//后面其实和PCF8591差不多
+	I2CStart();
+	I2CSendByte(0xa1);
+	I2CWaitAck();
+	temp = I2CReceiveByte();
+	I2CSendAck(1);
+	I2CStop();
+	return temp;
 }
 ```
 
 使用例如
 
 ```c
-WriteData(0x00,0x05);//向EEPROM地址0写入数据5
-Delay(5);
-WriteData(0x01,0x06);//向EEPROM地址1写入数据6
+    temp = R_eeprom(0x00);  // ①
+    if(temp != 0xAA)        // ②
+    {
+        // 延时一定不要忘记了， 当前在函数内部延时了
+        W_eeprom(0xAA, 0x00);
+        W_eeprom(0, 0x01);
+        W_eeprom(90, 0x02);
+        W_eeprom(8, 0x03);
+    }
+    else                    // ③
+    {
+        PL = R_eeprom(0x01);
+        PH = R_eeprom(0x02);
+        Dev_Address = R_eeprom(0x03);
+        PH_Display = PH;
+        PL_Display = PL;
+    }
 ```
 
