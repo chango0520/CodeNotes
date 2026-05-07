@@ -30,30 +30,38 @@ void key_task(){
 
 ### 矩阵键盘
 
-**Key_Scan() **先进行键盘的扫描，确定按下按键的编号，以下代码只使用了两列（因为大部分只用两列，不少**外设使用会屏蔽按键**，例如NE555使用时，SIGNAL和P34连接，会屏蔽第四列）
+**Key_Scan() **先进行键盘的扫描，确定按下按键的编号
 
 ```c
 unsigned char Key_Scan()
 {
-	unsigned char key_temp;
+	unsigned int key_temp;
 	unsigned char key_value;
 	
-	P3 |= 0x0f; //先把行全部拉高
-	P44 = 0; P42 = 1; //拉低第一列
-	key_temp = P3; //获取第一列按下的
-	P44 = 1; P42 = 0;  //同理拉低第二列
-	key_temp = (key_temp << 4) | (P3 & 0x0f); //合并两次获取的数据为8位（两列四行）
+	P3 |= 0x0f;
 	
-	switch(~key_temp) //取反看得直观一些
+	P44 = 0; P42 = 1; P35 = 1;
+	key_temp = P3 & 0x0f;
+	P44 = 1; P42 = 0; P35 = 1;
+	key_temp = (key_temp << 4) | (P3 & 0x0f);
+	P44 = 1; P42 = 1; P35 = 0;
+	key_temp = (key_temp << 4) | (P3 & 0x0f);
+	P44 = 1; P42 = 1; P35 = 1;
+	key_temp = (key_temp << 4) | (P3 & 0x0f);
+	
+	switch(~key_temp)
 	{
-		case 0x80: key_value = 4; break; //根据图，S4是1列4行
-		case 0x40: key_value = 5; break;
-		case 0x08: key_value = 8; break;
-		case 0x04: key_value = 9; break; 
-		default:key_value = 0; break; //若一开始未赋值，此处切记赋值
+		case 0x8000: key_value = 4; break;
+		case 0x4000: key_value = 5; break;
+		case 0x0800: key_value = 8; break;
+		case 0x0400: key_value = 9; break;
+		case 0x0080: key_value = 12; break;
+		case 0x0040: key_value = 13; break;
+		default: key_value = 0; break;
 	}
-	return key_value; //返回按下的按键进行消抖/长短按处理
+	return key_value;
 }
+
 ```
 
 
@@ -116,11 +124,10 @@ if(cnt_key < 50) cnt_key++; //具体数值按照实际来
 先写**Nixie_Show()** 实现数码管动态显示
 
 ```c
-//其中是1-9
-code unsigned char Seg_Table[] = {0xc0, 0xf9, 0xa4, 0xb0, 0x99, 0x92, 0x82, 0xf8, 
-								0x80, 0x90, 0x88, 0x83, 0xc6, 0xa1, 0x86, 0x8e };
-//显示缓冲
-unsigned char Nixie_Value[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+//内存不够，可以放到pdata
+pdata unsigned char Nixie_Value[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+code unsigned char Seg_Table[] = {0xC0, 0xF9, 0xA4, 0xB0, 0x99, 0x92, 0x82, 0xF8,
+									0x80, 0x90, 0x88, 0x83, 0xC6, 0xA1, 0x86, 0x8E};
 void Nixie_Show()
 {
 	static unsigned char com; 
