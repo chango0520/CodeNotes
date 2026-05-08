@@ -2,6 +2,20 @@
 
 超声波作用就是**测距**
 
+先要初始化定时器1
+
+```c
+void Timer1_Init(void)		//1毫秒@12.000MHz
+{
+	AUXR &= 0xBF;			//定时器时钟12T模式
+	TMOD &= 0x0F;			//设置定时器模式
+	TR1 = 1;				//定时器1开始计时
+}
+
+```
+
+
+
 先把引脚补全
 
 ```c
@@ -14,40 +28,35 @@ sbit Rx = P1^1;
 ```c
 unsigned int csb_collect(){
 	unsigned int distance;
-	unsigned char num = 10;
+	unsigned char num=10;
 	
-	TR0 = 0;
-	TH0 = 0xff;
-	TL0 = 0xf4; //设置初值，实现发送 40kHz的超声波
-	TR0 = 1;
+	TR1=0;
+	TH1=0xff;
+	TL1=0xf4;
+	TR1=1;
 	
-	while(num--)
-	{
-		while(!TF0);
-		TF0 = 0;
-		Tx ^= 1; //取反发射引脚 （产生方波）
+	while(num--){
+		while(!TF1);
+		TF1=0;
+		Tx^=1;
 	}
 	
-	TR0 = 0; //停止计数
-	TH0 = 0; //计数清零
-	TL0 = 0;
-	TR0 = 1;
+	TR1=0;
+	TH1=TL1=0;
+	TR1=1;
 	
-	while(Rx && !TF0);
-	TR0 = 0;
+	while(Rx && !TF1);
+	TR1=0;
 	
-	if(TF0) //如果计数器跑满还没收到回波
-	{
-		distance = 999; //设置一个错误数值
-		TF0 = 0;
+	if(TF1){
+		distance =999;
+		TF1=0;
 	}
-	else
-	{
-		distance = ((TH0<<8)|TL0) * 0.017; //dist = t*340/2 ， 340m/s == 0.034cm/us
+	else{
+		distance = ((TH1<<8)|TL1) * 0.017;
 	}
 	
 	return distance;
-	
 }
 ```
 

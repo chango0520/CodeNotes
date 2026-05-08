@@ -55,7 +55,7 @@ void Uart_SendString(unsigned char * arr_rec)
 unsigned char uart_buf[10]; //缓冲区
 unsigned char uart_index; //正在读取的位
 unsigned char cnt_uart; //定时器中断计数
-big flag_uart; //开启计数的标志位
+bit flag_uart; //开启计数的标志位
 ```
 
 在定时器中断内写
@@ -98,14 +98,14 @@ void uart_task(){
         flag_dev_addr = sscanf(uart_buf, "#%u?", &uart_rec_dev);
         //flag_dev_addr = Prase_Dev_Addr(uart_rec_arr, &uart_rec_dev); 自己写函数也行
         //unsigned int uart_rec_dev 串口解析地址值
-                if(flag_dev_addr == 1 && uart_rec_dev == Dev_Address)               
+        if(flag_dev_addr == 1 && uart_rec_dev == Dev_Address)               
         {
             // 读取当前时间
             R_Ds1302(Time);     
             // 串口输出，两种方法均可
             printf("%u.%ukPa@%bu%bu:%bu%bu", pressure/10%10, pressure%10, Time[0]/10%10, Time[0]%10, Time[1]/10%10, Time[1]%10);
             //sprintf(uart_rec_arr, "%u.%ukPa@%bu%bu:%bu%bu", pressure/10%10, pressure%10, Time[0]/10%10, Time[0]%10, Time[1]/10%10, Time[1]%10);
-            Uart_SendString(uart_rec_arr);
+            Uart_SendString(uart_buf);
             // 闪烁过程中再次收到本机压力查询命令，则重置计时
             flag_led1_blink = 1;
             led1_rate = 0;
