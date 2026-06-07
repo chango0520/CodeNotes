@@ -8,7 +8,7 @@ e2prom可以实现掉电不掉数据
 
 ```c
 //写入eeprom
-void W_eeprom(unsigned char dat, unsigned char address)
+void W_e2prom(unsigned char dat, unsigned char address)
 {
 	I2CStart();
 	I2CSendByte(0xA0); //解除写保护
@@ -28,7 +28,7 @@ void W_eeprom(unsigned char dat, unsigned char address)
     // Delay_ms(5);
 }
 //读出eeprom
-unsigned char R_eeprom(unsigned char address)
+unsigned char R_e2prom(unsigned char address)
 {
 	unsigned char temp;
 	I2CStart();

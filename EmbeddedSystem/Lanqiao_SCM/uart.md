@@ -36,12 +36,12 @@ char putchar(char ch){
 }
 
 // 字符串发送函数
-void Uart_SendString(unsigned char * arr_rec)
+void Uart_SendString(unsigned char * uart_buf)
 {
-	while(*arr_rec != '\0')
+	while(*uart_buf != '\0')
 	{
-		SBUF = *arr_rec++;
-		while(TI == 0);
+		SBUF = *uart_buf++;
+		while(!TI);
 		TI = 0;
 	}
 }	
@@ -74,14 +74,14 @@ void Uart1_Isr(void) interrupt 4
 	if (RI)				//检测串口1接收中断
 	{	
         flag_uart=1; //开始计时
-        uart_buf[uart_index] = SBUF; //把SBUF里面的数据读取出来
-        uart_index++;
+        uart_buf[uart_index++] = SBUF; //把SBUF里面的数据读取出来
+        cnt_uart=0;
 		RI = 0;			//清除串口1接收中断请求位
         //防止缓冲区溢出，其实可以不要
-        if(uart_index>10){
-            memset(uart_buf,0,10);
-            uart_index=0;
-        }
+        //if(uart_index>10){
+        //    memset(uart_buf,0,10);
+        //    uart_index=0;
+        //}
 	}
 }
 ```
@@ -90,26 +90,23 @@ void Uart1_Isr(void) interrupt 4
 
 ```c
 void uart_task(){
-    bit flag_dev_addr=0;
     if(!uart_index) return;
     if(cnt_uart>=10) //串口超时解析
     {
-        //此处写具体要实现的功能
-        flag_dev_addr = sscanf(uart_buf, "#%u?", &uart_rec_dev);
         //flag_dev_addr = Prase_Dev_Addr(uart_rec_arr, &uart_rec_dev); 自己写函数也行
         //unsigned int uart_rec_dev 串口解析地址值
-        if(flag_dev_addr == 1 && uart_rec_dev == Dev_Address)               
+        if(sscanf(uart_buf, "#%u?", &uart_rec_dev) == 1 && uart_rec_dev == Dev_Address)               
         {
             // 读取当前时间
-            R_Ds1302(Time);     
+            Read_RTC(Time);     
             // 串口输出，两种方法均可
             printf("%u.%ukPa@%bu%bu:%bu%bu", pressure/10%10, pressure%10, Time[0]/10%10, Time[0]%10, Time[1]/10%10, Time[1]%10);
             //sprintf(uart_rec_arr, "%u.%ukPa@%bu%bu:%bu%bu", pressure/10%10, pressure%10, Time[0]/10%10, Time[0]%10, Time[1]/10%10, Time[1]%10);
             Uart_SendString(uart_buf);
             // 闪烁过程中再次收到本机压力查询命令，则重置计时
-            flag_led1_blink = 1;
-            led1_rate = 0;
-            led1_count = 0;
+            //flag_led1_blink = 1;
+            //led1_rate = 0;
+            //led1_count = 0;
 
         }
         cnt_uart=flag_uart=0;

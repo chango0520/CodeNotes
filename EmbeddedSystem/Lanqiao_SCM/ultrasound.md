@@ -9,7 +9,7 @@ void Timer1_Init(void)		//1毫秒@12.000MHz
 {
 	AUXR &= 0xBF;			//定时器时钟12T模式
 	TMOD &= 0x0F;			//设置定时器模式
-	TR1 = 1;				//定时器1开始计时
+	TF1=0;
 }
 
 ```
@@ -26,38 +26,38 @@ sbit Rx = P1^1;
 然后就可以写测距函数了
 
 ```c
-unsigned int csb_collect(){
-	unsigned int distance;
+float csb_collect()
+{
 	unsigned char num=10;
-	
+	float temp;
 	TR1=0;
 	TH1=0xff;
 	TL1=0xf4;
 	TR1=1;
-	
-	while(num--){
+	while(num--)
+	{
 		while(!TF1);
 		TF1=0;
 		Tx^=1;
+		
 	}
-	
 	TR1=0;
-	TH1=TL1=0;
+	TH1=0;
+	TL1=0;
 	TR1=1;
-	
-	while(Rx && !TF1);
-	TR1=0;
-	
-	if(TF1){
-		distance =999;
+	while(Rx&&!TF1);
+	if(TF1)
+	{
 		TF1=0;
+		temp=999.9;
 	}
-	else{
-		distance = ((TH1<<8)|TL1) * 0.017;
+	else
+	{
+		Rx=1;
+		temp=((TH1<<8)|TL1)*0.017;
 	}
-	
-	return distance;
-}
+	return temp;
+}	
 ```
 
 使用的话

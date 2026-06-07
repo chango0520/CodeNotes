@@ -26,6 +26,33 @@ void key_task(){
 
 还可以参考矩阵键盘写法
 
+```c
+unsigned char Key_Scan()
+{
+	unsigned char key_value = 0;
+	
+	// 独立按键模式下，S4~S7 直接对应 P33~P30 引脚 (J5需短接GND)
+	if (P33 == 0) 
+	{
+		key_value = 4; // S4 按下
+	}
+	else if (P32 == 0) 
+	{
+		key_value = 5; // S5 按下
+	}
+	else if (P31 == 0) 
+	{
+		key_value = 6; // S6 按下
+	}
+	else if (P30 == 0) 
+	{
+		key_value = 7; // S7 按下
+	}
+	
+	return key_value;
+}
+```
+
 
 
 ### 矩阵键盘
@@ -35,31 +62,31 @@ void key_task(){
 ```c
 unsigned char Key_Scan()
 {
-	unsigned int key_temp;
-	unsigned char key_value;
+	unsigned int temp;
+	unsigned char value;
 	
 	P3 |= 0x0f;
 	
 	P44 = 0; P42 = 1; P35 = 1;
-	key_temp = P3 & 0x0f;
+	temp = P3 & 0x0f;
 	P44 = 1; P42 = 0; P35 = 1;
-	key_temp = (key_temp << 4) | (P3 & 0x0f);
+	temp = (temp << 4) | (P3 & 0x0f);
 	P44 = 1; P42 = 1; P35 = 0;
-	key_temp = (key_temp << 4) | (P3 & 0x0f);
+	temp = (temp << 4) | (P3 & 0x0f);
 	P44 = 1; P42 = 1; P35 = 1;
-	key_temp = (key_temp << 4) | (P3 & 0x0f);
+	temp = (temp << 4) | (P3 & 0x0f);
 	
-	switch(~key_temp)
+	switch(~temp)
 	{
-		case 0x8000: key_value = 4; break;
-		case 0x4000: key_value = 5; break;
-		case 0x0800: key_value = 8; break;
-		case 0x0400: key_value = 9; break;
-		case 0x0080: key_value = 12; break;
-		case 0x0040: key_value = 13; break;
-		default: key_value = 0; break;
+		case 0x8000: value = 4; break;
+		case 0x4000: value = 5; break;
+		case 0x0800: value = 8; break;
+		case 0x0400: value = 9; break;
+		case 0x0080: value = 12; break;
+		case 0x0040: value = 13; break;
+		default: value = 0; break;
 	}
-	return key_value;
+	return value;
 }
 
 ```
@@ -71,19 +98,19 @@ unsigned char Key_Scan()
 ```c
 void Key_Proc()
 {
-	static unsigned char key_old = 0;
-	unsigned char key_up,key_down,key_temp;
+	static unsigned char old = 0;
+	unsigned char up,down,temp;
 	if(cnt_key < 50) return;
 	cnt_key = 0;
 	
-	key_temp = Key_Scan();
-	key_down = key_temp & (key_temp ^ key_old); //这一刻才按下，即下降沿
-	key_up   = ~key_temp & (key_temp ^ key_old); //这一刻松手了，即上升沿
-	key_old = key_temp; //获取上一刻
+	temp = Key_Scan();
+	down = temp & (temp ^ old); //这一刻才按下，即下降沿
+	up   = ~temp & (temp ^ old); //这一刻松手了，即上升沿
+	old = temp; //获取上一刻
 	
-	if(key_down)
+	if(down)
 	{
-		switch(key_down)
+		switch(down)
 		{
 			case 9:
 				if(flag_ui == 1) flag_9 = 1;
@@ -91,9 +118,9 @@ void Key_Proc()
 		}
 	}
 	
-	if(key_up)
+	if(up)
 	{
-		switch(key_up)
+		switch(up)
 		{
 			case 9:
 				if(temp_para > 0) temp_para--;
